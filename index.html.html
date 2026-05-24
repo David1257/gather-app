@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gather — Find Your People</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1A2E;
+    --forest: #2D5016;
+    --sage: #7A9E5F;
+    --rust: #C4622D;
+    --gold: #D4A843;
+    --mist: #E8EDE4;
+    --white: #FEFEFE;
+    --gray: #8A8A9A;
+    --light-gray: #F0EDE8;
+    --border: rgba(26,26,46,0.12);
+    --shadow: 0 4px 32px rgba(26,26,46,0.10);
+    --shadow-lg: 0 12px 60px rgba(26,26,46,0.18);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── LANDING ── */
+  #screen-landing {
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+  .landing-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 70% 30%, rgba(45,80,22,0.4) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 50% at 20% 80%, rgba(196,98,45,0.2) 0%, transparent 60%);
+  }
+  .landing-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .landing-inner {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    min-height: 100vh;
+    padding: 32px;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700;
+    color: var(--cream);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--gold); }
+  .landing-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0; }
+  .landing-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(212,168,67,0.15);
+    border: 1px solid rgba(212,168,67,0.3);
+    color: var(--gold);
+    font-size: 13px; font-weight: 500;
+    padding: 7px 14px; border-radius: 100px;
+    width: fit-content; margin-bottom: 28px;
+  }
+  .landing-tag::before { content: '●'; font-size: 8px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .landing-h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(42px, 7vw, 76px);
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.1;
+    letter-spacing: -2px;
+    margin-bottom: 24px;
+  }
+  .landing-h1 em { color: var(--gold); font-style: italic; }
+  .landing-sub {
+    font-size: 18px; font-weight: 300;
+    color: rgba(245,240,232,0.65);
+    line-height: 1.6; max-width: 500px;
+    margin-bottom: 48px;
+  }
+  .landing-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--gold);
+    color: var(--ink);
+    border: none; border-radius: 100px;
+    padding: 16px 32px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #e0b84a; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(212,168,67,0.4); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--cream);
+    border: 1px solid rgba(245,240,232,0.3);
+    border-radius: 100px;
+    padding: 16px 32px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--cream); }
+  .landing-stats {
+    display: flex; gap: 40px;
+    padding-top: 40px;
+    border-top: 1px solid rgba(245,240,232,0.1);
+  }
+  .stat-item { }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700; color: var(--cream);
+  }
+  .stat-label { font-size: 13px; color: rgba(245,240,232,0.5); margin-top: 2px; }
+
+  /* ── AUTH ── */
+  #screen-auth {
+    background: var(--cream);
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .auth-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 48px;
+    width: 100%; max-width: 440px;
+    box-shadow: var(--shadow-lg);
+  }
+  .auth-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--ink); margin-bottom: 32px;
+  }
+  .auth-logo span { color: var(--forest); }
+  .auth-title { font-size: 26px; font-weight: 600; margin-bottom: 8px; }
+  .auth-sub { font-size: 15px; color: var(--gray); margin-bottom: 32px; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 7px; color: var(--ink); }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; color: var(--ink);
+    background: var(--cream);
+    outline: none; transition: border 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--forest);
+    background: var(--white);
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .btn-full {
+    width: 100%;
+    background: var(--forest);
+    color: var(--white);
+    border: none; border-radius: 100px;
+    padding: 15px; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-full:hover { background: #3a6b1e; }
+  .auth-switch {
+    text-align: center; margin-top: 20px;
+    font-size: 14px; color: var(--gray);
+  }
+  .auth-switch a { color: var(--forest); font-weight: 500; cursor: pointer; text-decoration: none; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 1.5px solid var(--border); }
+  .auth-tab {
+    flex: 1; padding: 12px; text-align: center;
+    font-size: 14px; font-weight: 500; color: var(--gray);
+    cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px;
+    transition: all 0.15s;
+  }
+  .auth-tab.active { color: var(--forest); border-bottom-color: var(--forest); }
+  .interests-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .interest-chip {
+    padding: 7px 14px; border-radius: 100px;
+    border: 1.5px solid var(--border);
+    font-size: 13px; cursor: pointer; transition: all 0.15s;
+    background: var(--white);
+  }
+  .interest-chip.selected { background: var(--forest); color: var(--white); border-color: var(--forest); }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 100;
+  }
+  .topnav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 700; color: var(--ink);
+  }
+  .topnav-logo span { color: var(--forest); }
+  .topnav-actions { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--forest); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 15px; cursor: pointer;
+  }
+  .notif-btn {
+    position: relative; background: none; border: none; cursor: pointer;
+    width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; transition: background 0.15s;
+  }
+  .notif-btn:hover { background: var(--light-gray); }
+  .notif-btn svg { width: 20px; height: 20px; }
+  .notif-dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--rust); border: 2px solid var(--white);
+  }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; position: sticky; bottom: 0; z-index: 100;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 8px; cursor: pointer;
+    transition: all 0.15s; gap: 4px;
+  }
+  .nav-item svg { width: 22px; height: 22px; stroke: var(--gray); transition: stroke 0.15s; }
+  .nav-item span { font-size: 11px; color: var(--gray); font-weight: 500; transition: color 0.15s; }
+  .nav-item.active svg { stroke: var(--forest); }
+  .nav-item.active span { color: var(--forest); }
+  .nav-item.create { }
+  .nav-item.create .create-circle {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--forest); display: flex; align-items: center; justify-content: center;
+    margin-bottom: 2px; box-shadow: 0 4px 16px rgba(45,80,22,0.4);
+  }
+  .nav-item.create .create-circle svg { stroke: var(--white); width: 24px; height: 24px; }
+  .nav-item.create span { color: var(--forest); font-weight: 600; }
+
+  /* ── MAIN AREA ── */
+  .main { flex: 1; overflow-y: auto; background: var(--cream); }
+  .page { display: none; padding: 20px 24px 24px; }
+  .page.active { display: block; }
+
+  /* ── HOME PAGE ── */
+  .section-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--gray);
+    margin-bottom: 14px;
+  }
+  .featured-card {
+    background: var(--ink);
+    border-radius: var(--radius);
+    padding: 28px; margin-bottom: 24px;
+    position: relative; overflow: hidden;
+    cursor: pointer; transition: transform 0.2s;
+  }
+  .featured-card:hover { transform: translateY(-2px); }
+  .featured-card .bg-accent {
+    position: absolute; top: -40px; right: -40px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(45,80,22,0.5) 0%, transparent 70%);
+  }
+  .featured-chip {
+    display: inline-block;
+    background: rgba(212,168,67,0.2);
+    color: var(--gold); font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 100px;
+    margin-bottom: 16px; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .featured-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px; font-weight: 600; color: var(--cream);
+    line-height: 1.25; margin-bottom: 12px;
+  }
+  .featured-meta { display: flex; gap: 16px; margin-bottom: 20px; }
+  .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(245,240,232,0.7); }
+  .meta-item svg { width: 14px; height: 14px; stroke: rgba(245,240,232,0.5); }
+  .avatars-stack { display: flex; align-items: center; gap: -4px; }
+  .mini-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: var(--forest);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--cream);
+    margin-left: -8px;
+  }
+  .mini-avatar:first-child { margin-left: 0; }
+  .featured-footer { display: flex; align-items: center; justify-content: space-between; }
+  .price-badge {
+    background: var(--gold); color: var(--ink);
+    font-size: 14px; font-weight: 700;
+    padding: 8px 18px; border-radius: 100px;
+  }
+  .spots-left { font-size: 12px; color: rgba(245,240,232,0.5); }
+
+  .hangout-list { display: flex; flex-direction: column; gap: 12px; }
+  .hangout-card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 18px; display: flex; gap: 16px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .hangout-card:hover { box-shadow: var(--shadow); border-color: rgba(45,80,22,0.2); }
+  .hangout-emoji {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: var(--mist); display: flex; align-items: center;
+    justify-content: center; font-size: 26px; flex-shrink: 0;
+  }
+  .hangout-info { flex: 1; min-width: 0; }
+  .hangout-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .hangout-host { font-size: 12px; color: var(--gray); margin-bottom: 8px; }
+  .hangout-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 11px; padding: 3px 9px; border-radius: 100px;
+    background: var(--light-gray); color: var(--gray); font-weight: 500;
+  }
+  .chip.green { background: rgba(45,80,22,0.1); color: var(--forest); }
+  .chip.rust { background: rgba(196,98,45,0.1); color: var(--rust); }
+  .hangout-right { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
+  .hangout-price { font-size: 16px; font-weight: 700; color: var(--ink); }
+  .hangout-spots { font-size: 11px; color: var(--gray); }
+
+  /* ── DETAIL PAGE ── */
+  .detail-hero {
+    background: var(--ink);
+    border-radius: var(--radius);
+    padding: 32px 24px 24px;
+    margin-bottom: 20px; position: relative; overflow: hidden;
+  }
+  .detail-hero .bg-glow {
+    position: absolute; top: -60px; right: -60px; width: 250px; height: 250px;
+    border-radius: 50%; background: radial-gradient(circle, rgba(45,80,22,0.4), transparent 70%);
+  }
+  .detail-hero-content { position: relative; z-index: 1; }
+  .detail-back {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; color: rgba(245,240,232,0.6);
+    cursor: pointer; margin-bottom: 20px; width: fit-content;
+    transition: color 0.15s;
+  }
+  .detail-back:hover { color: var(--cream); }
+  .detail-back svg { width: 16px; height: 16px; stroke: currentColor; }
+  .detail-emoji { font-size: 48px; margin-bottom: 12px; }
+  .detail-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700; color: var(--cream);
+    line-height: 1.2; margin-bottom: 16px;
+  }
+  .detail-meta-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .detail-meta-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; color: rgba(245,240,232,0.75);
+  }
+  .detail-meta-item svg { width: 16px; height: 16px; stroke: var(--sage); }
+  .detail-section { background: var(--white); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; }
+  .detail-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .detail-section p { font-size: 14px; color: var(--gray); line-height: 1.6; }
+  .host-row { display: flex; align-items: center; gap: 14px; }
+  .host-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--forest); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 600;
+  }
+  .host-info h4 { font-size: 15px; font-weight: 600; }
+  .host-info p { font-size: 13px; color: var(--gray); }
+  .attendees-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .attendee-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .attendee-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--mist); display: flex; align-items: center;
+    justify-content: center; font-size: 17px; font-weight: 600; color: var(--forest);
+  }
+  .attendee-name { font-size: 11px; color: var(--gray); }
+  .spot-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .spot-item:last-child { border-bottom: none; }
+  .spot-open { color: var(--sage); font-weight: 500; }
+  .detail-footer {
+    position: sticky; bottom: 68px;
+    background: var(--cream); padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+  }
+  .price-big { font-size: 26px; font-weight: 700; }
+  .price-per { font-size: 13px; color: var(--gray); margin-top: 2px; }
+
+  /* ── PAYMENT ── */
+  #screen-payment {
+    background: var(--cream);
+    min-height: 100vh; padding: 24px;
+    align-items: center; justify-content: center;
+  }
+  .payment-card {
+    background: var(--white); border-radius: 24px;
+    padding: 36px; width: 100%; max-width: 480px;
+    box-shadow: var(--shadow-lg);
+  }
+  .payment-back {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; color: var(--gray); cursor: pointer;
+    margin-bottom: 24px; width: fit-content; transition: color 0.15s;
+  }
+  .payment-back:hover { color: var(--ink); }
+  .payment-back svg { width: 16px; height: 16px; stroke: currentColor; }
+  .payment-summary {
+    background: var(--light-gray); border-radius: var(--radius-sm);
+    padding: 16px; margin-bottom: 24px;
+  }
+  .payment-summary h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  .summary-row {
+    display: flex; justify-content: space-between;
+    font-size: 14px; padding: 4px 0;
+  }
+  .summary-row.total {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-weight: 700; font-size: 16px;
+  }
+  .stripe-element-wrap {
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px 16px; background: var(--cream);
+    transition: border-color 0.15s; margin-bottom: 18px;
+  }
+  .stripe-element-wrap:focus-within { border-color: var(--forest); }
+  #card-element { min-height: 20px; }
+  #card-errors { color: var(--rust); font-size: 13px; margin-top: 8px; min-height: 18px; }
+  .secure-note {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--gray); margin-bottom: 20px;
+  }
+  .secure-note svg { width: 14px; height: 14px; stroke: var(--sage); }
+
+  /* ── SUCCESS ── */
+  #screen-success {
+    background: var(--cream); align-items: center;
+    justify-content: center; padding: 24px;
+  }
+  .success-card {
+    background: var(--white); border-radius: 24px;
+    padding: 48px 36px; width: 100%; max-width: 440px;
+    text-align: center; box-shadow: var(--shadow-lg);
+  }
+  .success-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(45,80,22,0.12);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+  }
+  .success-icon svg { width: 40px; height: 40px; stroke: var(--forest); }
+  .success-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700; margin-bottom: 12px;
+  }
+  .success-sub { font-size: 15px; color: var(--gray); line-height: 1.6; margin-bottom: 28px; }
+  .event-ticket {
+    background: var(--light-gray); border-radius: var(--radius-sm);
+    padding: 20px; margin-bottom: 24px; text-align: left;
+  }
+  .ticket-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; }
+  .ticket-row span:first-child { color: var(--gray); }
+  .ticket-row span:last-child { font-weight: 500; }
+
+  /* ── CREATE PAGE ── */
+  .create-header {
+    margin-bottom: 24px;
+  }
+  .create-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700; margin-bottom: 6px;
+  }
+  .create-header p { font-size: 14px; color: var(--gray); }
+  .create-steps { display: flex; gap: 6px; margin-bottom: 28px; }
+  .create-step {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--border); transition: background 0.3s;
+  }
+  .create-step.done { background: var(--forest); }
+  .form-card {
+    background: var(--white); border-radius: var(--radius);
+    padding: 24px; margin-bottom: 14px;
+  }
+  .form-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .form-row { display: flex; gap: 12px; }
+  .form-row .field { flex: 1; }
+  .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+  .emoji-opt {
+    aspect-ratio: 1; border-radius: 10px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; cursor: pointer; transition: all 0.15s;
+    background: var(--white);
+  }
+  .emoji-opt.selected { border-color: var(--forest); background: var(--mist); }
+  .price-preview {
+    background: var(--mist); border-radius: var(--radius-sm);
+    padding: 16px; margin-top: 12px;
+  }
+  .price-preview-row { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
+  .price-preview-row.you { font-weight: 600; color: var(--forest); }
+
+  /* ── PROFILE / BOOKINGS ── */
+  .profile-hero {
+    background: var(--ink); border-radius: var(--radius);
+    padding: 24px; margin-bottom: 16px; text-align: center;
+  }
+  .profile-avatar-big {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--forest); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700;
+    margin: 0 auto 14px; border: 3px solid rgba(245,240,232,0.2);
+  }
+  .profile-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700; color: var(--cream); margin-bottom: 4px;
+  }
+  .profile-since { font-size: 13px; color: rgba(245,240,232,0.5); margin-bottom: 16px; }
+  .profile-stats { display: flex; justify-content: center; gap: 32px; }
+  .profile-stat { text-align: center; }
+  .profile-stat .num { font-size: 22px; font-weight: 700; color: var(--cream); }
+  .profile-stat .lbl { font-size: 12px; color: rgba(245,240,232,0.5); }
+  .booking-card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 18px;
+    margin-bottom: 12px; display: flex; gap: 14px;
+    align-items: center;
+  }
+  .booking-emoji {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: var(--mist); display: flex; align-items: center;
+    justify-content: center; font-size: 22px; flex-shrink: 0;
+  }
+  .booking-info { flex: 1; }
+  .booking-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .booking-date { font-size: 13px; color: var(--gray); }
+  .booking-status {
+    font-size: 12px; font-weight: 600; padding: 4px 10px;
+    border-radius: 100px;
+  }
+  .status-confirmed { background: rgba(45,80,22,0.1); color: var(--forest); }
+  .status-past { background: var(--light-gray); color: var(--gray); }
+
+  /* ── TOASTS & UTILS ── */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--cream);
+    padding: 12px 24px; border-radius: 100px;
+    font-size: 14px; font-weight: 500;
+    z-index: 9999; opacity: 0; transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(26,26,46,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .loading-overlay.show { opacity: 1; pointer-events: all; }
+  .spinner {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid rgba(245,240,232,0.2);
+    border-top-color: var(--gold);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SETUP GUIDE ── */
+  #screen-guide {
+    background: var(--cream); min-height: 100vh;
+  }
+  .guide-nav {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 16px;
+  }
+  .guide-back {
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 14px; color: var(--gray); transition: color 0.15s;
+  }
+  .guide-back:hover { color: var(--ink); }
+  .guide-back svg { width: 16px; height: 16px; stroke: currentColor; }
+  .guide-title { font-size: 16px; font-weight: 600; }
+  .guide-content { padding: 24px; max-width: 720px; }
+  .guide-intro {
+    background: var(--ink); border-radius: var(--radius);
+    padding: 28px; margin-bottom: 20px; color: var(--cream);
+  }
+  .guide-intro h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px; font-weight: 700; margin-bottom: 10px;
+  }
+  .guide-intro p { font-size: 14px; color: rgba(245,240,232,0.7); line-height: 1.6; }
+  .guide-phase {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .guide-phase-header {
+    padding: 18px 20px; display: flex; align-items: center;
+    gap: 14px; cursor: pointer; user-select: none;
+  }
+  .guide-phase-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--forest); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .guide-phase-title { font-size: 16px; font-weight: 600; flex: 1; }
+  .guide-phase-badge {
+    font-size: 11px; padding: 3px 9px; border-radius: 100px;
+    font-weight: 600;
+  }
+  .badge-free { background: rgba(45,80,22,0.1); color: var(--forest); }
+  .badge-easy { background: rgba(212,168,67,0.15); color: #8a6400; }
+  .badge-week { background: rgba(196,98,45,0.1); color: var(--rust); }
+  .guide-phase-body { padding: 0 20px 20px; border-top: 1px solid var(--border); display: none; }
+  .guide-phase-body.open { display: block; }
+  .guide-step-list { list-style: none; margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .guide-step-item { display: flex; gap: 12px; align-items: flex-start; }
+  .guide-step-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--mist); display: flex; align-items: center;
+    justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 1px;
+  }
+  .guide-step-text { flex: 1; }
+  .guide-step-text strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .guide-step-text p { font-size: 13px; color: var(--gray); line-height: 1.5; }
+  .guide-step-text .link {
+    display: inline-block; margin-top: 5px;
+    font-size: 12px; color: var(--forest); font-weight: 500;
+    text-decoration: none; border-bottom: 1px solid rgba(45,80,22,0.3);
+  }
+  .cost-table {
+    width: 100%; border-collapse: collapse; margin-top: 14px;
+    font-size: 13px;
+  }
+  .cost-table th {
+    text-align: left; padding: 10px 12px;
+    background: var(--light-gray); font-weight: 600; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .cost-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .cost-table tr:last-child td { border-bottom: none; }
+  .cost-free { color: var(--forest); font-weight: 600; }
+  .total-row td { font-weight: 700; font-size: 15px; border-top: 2px solid var(--border); }
+
+  /* ── Responsive ── */
+  @media (min-width: 600px) {
+    .hangout-list { display: grid; grid-template-columns: 1fr 1fr; }
+    .featured-card { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: LANDING                             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="screen active" id="screen-landing">
+  <div class="landing-bg"></div>
+  <div class="landing-dots"></div>
+  <div class="landing-inner">
+    <div class="logo">Gather<span>.</span></div>
+    <div class="landing-hero">
+      <div class="landing-tag">Now in Beta · Waterloo, ON</div>
+      <h1 class="landing-h1">Find your<br><em>people.</em><br>Not just a match.</h1>
+      <p class="landing-sub">Activity-based micro-hangouts for adults who want real friendships — not another dating app or massive Meetup.</p>
+      <div class="landing-actions">
+        <button class="btn-primary" onclick="showScreen('auth')">Join Gather — it's free</button>
+        <button class="btn-ghost" onclick="showGuide()">See how it works</button>
+      </div>
+    </div>
+    <div class="landing-stats">
+      <div class="stat-item">
+        <div class="stat-num">4–8</div>
+        <div class="stat-label">people per hangout</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">$0</div>
+        <div class="stat-label">to join platform</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">activity-first</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: AUTH                                -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-auth">
+  <div class="auth-card">
+    <div class="auth-logo">Gather<span>.</span></div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('signup', this)">Create account</div>
+      <div class="auth-tab" onclick="switchAuthTab('login', this)">Sign in</div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="auth-signup">
+      <div class="field">
+        <label>Full name</label>
+        <input type="text" id="signup-name" placeholder="Alex Chen" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@email.com" />
+      </div>
+      <div class="field">
+        <label>Phone (for verification)</label>
+        <input type="tel" id="signup-phone" placeholder="+1 (226) 555-0100" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="Min. 8 characters" />
+      </div>
+      <div class="field">
+        <label>I'm interested in</label>
+        <div class="interests-grid" id="interests-grid"></div>
+      </div>
+      <button class="btn-full" onclick="doSignup()">Create my account</button>
+      <p class="auth-switch">Already have an account? <a onclick="switchAuthTab('login', document.querySelectorAll('.auth-tab')[1])">Sign in</a></p>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="auth-login" style="display:none">
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Sign in to see today's hangouts</div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@email.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Your password" />
+      </div>
+      <button class="btn-full" onclick="doLogin()">Sign in</button>
+      <p class="auth-switch">New here? <a onclick="switchAuthTab('signup', document.querySelectorAll('.auth-tab')[0])">Create an account</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: MAIN APP                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-app">
+  <!-- Top Nav -->
+  <div class="topnav">
+    <div class="topnav-logo">Gather<span>.</span></div>
+    <div class="topnav-actions">
+      <button class="notif-btn" onclick="showToast('No new notifications')">
+        <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <div class="notif-dot"></div>
+      </button>
+      <div class="avatar" id="user-avatar" onclick="navTo('profile')">A</div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main">
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div style="padding:20px 0 12px">
+        <p style="font-size:13px;color:var(--gray);">Good afternoon,</p>
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;" id="home-greeting">Alex 👋</h2>
+      </div>
+
+      <!-- Featured -->
+      <div class="section-label">Featured this week</div>
+      <div class="featured-card" onclick="openDetail(0)">
+        <div class="bg-accent"></div>
+        <div class="featured-chip">🌲 Outdoor · This Saturday</div>
+        <div class="featured-title">Morning Trail Hike<br>at Waterloo Park</div>
+        <div class="featured-meta">
+          <div class="meta-item">
+            <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Waterloo Park Trail
+          </div>
+          <div class="meta-item">
+            <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Sat 8:00 AM · 2.5 hrs
+          </div>
+        </div>
+        <div class="featured-footer">
+          <div>
+            <div class="avatars-stack">
+              <div class="mini-avatar">M</div>
+              <div class="mini-avatar">J</div>
+              <div class="mini-avatar">P</div>
+            </div>
+            <div class="spots-left" style="margin-top:4px">3 of 7 spots filled</div>
+          </div>
+          <div class="price-badge">$8</div>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div class="section-label">Happening nearby</div>
+      <div class="hangout-list" id="hangout-list"></div>
+    </div>
+
+    <!-- EXPLORE PAGE -->
+    <div class="page" id="page-explore">
+      <div style="padding:20px 0 16px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:6px;">Explore</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="explore-filters"></div>
+      </div>
+      <div class="hangout-list" id="explore-list"></div>
+    </div>
+
+    <!-- BOOKINGS PAGE -->
+    <div class="page" id="page-bookings">
+      <div style="padding:20px 0 16px">
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:6px;">My Hangouts</h2>
+      </div>
+      <div class="section-label">Upcoming</div>
+      <div id="upcoming-bookings"></div>
+      <div class="section-label" style="margin-top:20px">Past</div>
+      <div id="past-bookings"></div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div style="padding:20px 0 16px">
+        <div class="profile-hero">
+          <div class="profile-avatar-big" id="profile-avatar-big">A</div>
+          <div class="profile-name" id="profile-name">Alex Chen</div>
+          <div class="profile-since">Member since May 2026</div>
+          <div class="profile-stats">
+            <div class="profile-stat"><div class="num">3</div><div class="lbl">attended</div></div>
+            <div class="profile-stat"><div class="num">1</div><div class="lbl">hosted</div></div>
+            <div class="profile-stat"><div class="num">8</div><div class="lbl">friends made</div></div>
+          </div>
+        </div>
+        <div class="form-card">
+          <h3>My interests</h3>
+          <div class="interests-grid" id="profile-interests"></div>
+        </div>
+        <div class="form-card">
+          <h3>Account</h3>
+          <div class="field"><label>Display name</label><input type="text" id="profile-name-input" value="Alex Chen"/></div>
+          <div class="field"><label>Email</label><input type="email" value="alex@email.com" readonly style="opacity:0.6"/></div>
+          <button class="btn-full" onclick="showToast('Profile saved!')">Save changes</button>
+        </div>
+        <button class="btn-full" style="background:transparent;color:var(--rust);border:1.5px solid rgba(196,98,45,0.3);margin-top:8px" onclick="showToast('Signed out');setTimeout(()=>showScreen('landing'),800)">Sign out</button>
+      </div>
+    </div>
+
+    <!-- CREATE PAGE -->
+    <div class="page" id="page-create">
+      <div class="create-header">
+        <h2>Host a hangout</h2>
+        <p>Your event, your vibe — keep it small, keep it real.</p>
+      </div>
+      <div class="create-steps" id="create-progress"></div>
+
+      <!-- Step 1: Basics -->
+      <div id="create-step-1">
+        <div class="form-card">
+          <h3>What's the vibe?</h3>
+          <div class="field">
+            <label>Hangout name</label>
+            <input type="text" id="c-name" placeholder="Tuesday Evening Board Games" />
+          </div>
+          <div class="field">
+            <label>Category</label>
+            <select id="c-cat">
+              <option value="">Choose a category…</option>
+              <option>🌲 Outdoor & Nature</option>
+              <option>🎲 Games & Puzzles</option>
+              <option>☕ Coffee & Chat</option>
+              <option>📚 Books & Learning</option>
+              <option>🍜 Food & Cooking</option>
+              <option>🏃 Fitness & Sports</option>
+              <option>🎨 Arts & Crafts</option>
+              <option>🎵 Music</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Choose an emoji</label>
+            <div class="emoji-grid" id="emoji-grid"></div>
+          </div>
+          <div class="field">
+            <label>Description (tell people what to expect)</label>
+            <textarea id="c-desc" rows="4" placeholder="We meet every Tuesday for board games. Great for beginners! I'll bring Catan, Ticket to Ride, and Codenames. Show up, meet people, laugh."></textarea>
+          </div>
+        </div>
+        <button class="btn-full" onclick="createNext(2)">Continue →</button>
+      </div>
+
+      <!-- Step 2: When & Where -->
+      <div id="create-step-2" style="display:none">
+        <div class="form-card">
+          <h3>When & where</h3>
+          <div class="form-row">
+            <div class="field"><label>Date</label><input type="date" id="c-date" /></div>
+            <div class="field"><label>Start time</label><input type="time" id="c-time" value="18:00" /></div>
+          </div>
+          <div class="field"><label>Duration</label>
+            <select id="c-duration">
+              <option>1 hour</option><option>1.5 hours</option>
+              <option selected>2 hours</option><option>3 hours</option>
+              <option>Half day</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Location name</label>
+            <input type="text" id="c-loc" placeholder="Common Ground Coffee, Uptown Waterloo" />
+          </div>
+          <div class="field">
+            <label>Full address (shared only after booking)</label>
+            <input type="text" id="c-addr" placeholder="45 King St N, Waterloo, ON N2J 2X4" />
+          </div>
+          <div class="field">
+            <label>Recurring?</label>
+            <select id="c-recurring">
+              <option>One-time</option>
+              <option>Weekly (same time)</option>
+              <option>Bi-weekly</option>
+              <option>Monthly</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn-ghost" style="flex:0.4;color:var(--ink);border-color:var(--border)" onclick="createNext(1)">← Back</button>
+          <button class="btn-full" style="flex:1" onclick="createNext(3)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Spots & Pricing -->
+      <div id="create-step-3" style="display:none">
+        <div class="form-card">
+          <h3>Spots & pricing</h3>
+          <div class="field">
+            <label>Max attendees (including you)</label>
+            <select id="c-spots">
+              <option>4 people</option><option>5 people</option>
+              <option selected>6 people</option><option>7 people</option><option>8 people</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Price per person (CAD)</label>
+            <input type="number" id="c-price" placeholder="0" value="10" min="0" max="200" oninput="updatePricePreview()" />
+            <p style="font-size:12px;color:var(--gray);margin-top:6px">Set $0 for free. Charge to cover venue, supplies, or activity cost.</p>
+          </div>
+          <div class="price-preview" id="price-preview">
+            <div class="price-preview-row"><span>Price per person</span><span id="pp-price">$10</span></div>
+            <div class="price-preview-row"><span>Platform fee (10%)</span><span id="pp-fee">-$1.00</span></div>
+            <div class="price-preview-row"><span>Stripe processing (~2.9%+30¢)</span><span id="pp-stripe">-$0.59</span></div>
+            <div class="price-preview-row you"><span>You receive per person</span><span id="pp-you">$8.41</span></div>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label>Requirements (optional)</label>
+            <input type="text" id="c-reqs" placeholder="Bring water, wear comfortable shoes" />
+          </div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn-ghost" style="flex:0.4;color:var(--ink);border-color:var(--border)" onclick="createNext(2)">← Back</button>
+          <button class="btn-full" style="flex:1;background:var(--rust)" onclick="publishHangout()">Publish hangout 🎉</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="navTo('home')">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="nav-item" id="nav-explore" onclick="navTo('explore')">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <span>Explore</span>
+    </div>
+    <div class="nav-item create" onclick="navTo('create')">
+      <div class="create-circle">
+        <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/></svg>
+      </div>
+      <span>Host</span>
+    </div>
+    <div class="nav-item" id="nav-bookings" onclick="navTo('bookings')">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <span>Bookings</span>
+    </div>
+    <div class="nav-item" id="nav-profile" onclick="navTo('profile')">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span>Profile</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: DETAIL                              -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-detail">
+  <div class="topnav">
+    <div class="topnav-logo">Gather<span>.</span></div>
+    <div class="topnav-actions">
+      <div class="avatar" id="detail-avatar">A</div>
+    </div>
+  </div>
+  <div class="main" id="detail-content"></div>
+  <div class="detail-footer" id="detail-footer"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: PAYMENT                             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-payment">
+  <div class="payment-card">
+    <div class="payment-back" onclick="showScreen('detail')">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Back to hangout
+    </div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:6px">Confirm & pay</h2>
+    <p style="font-size:14px;color:var(--gray);margin-bottom:24px">You're one step away from meeting your people.</p>
+
+    <div class="payment-summary">
+      <h3 id="pay-event-name">Morning Trail Hike</h3>
+      <div class="summary-row"><span id="pay-date">Sat May 24 · 8:00 AM</span><span></span></div>
+      <div class="summary-row" style="margin-top:8px"><span>Ticket × 1</span><span id="pay-subtotal">$8.00</span></div>
+      <div class="summary-row"><span>Platform fee</span><span id="pay-fee">$0.80</span></div>
+      <div class="summary-row total"><span>Total</span><span id="pay-total">$8.80</span></div>
+    </div>
+
+    <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Card details</label>
+    <div class="stripe-element-wrap">
+      <div id="card-element">
+        <!-- Stripe mounts here -->
+        <div style="font-size:14px;color:var(--gray);padding:2px 0">
+          💳 Card number &nbsp;&nbsp;·&nbsp;&nbsp; MM / YY &nbsp;&nbsp;·&nbsp;&nbsp; CVC
+          <div style="font-size:11px;margin-top:6px;color:#aaa">(Stripe Elements loads here with your publishable key)</div>
+        </div>
+      </div>
+    </div>
+    <div id="card-errors"></div>
+
+    <div class="secure-note">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      Secured by Stripe · 256-bit encryption · PCI compliant
+    </div>
+
+    <button class="btn-full" id="pay-btn" onclick="processPayment()">
+      Pay <span id="pay-btn-amount">$8.80</span> & confirm spot
+    </button>
+
+    <p style="font-size:12px;color:var(--gray);text-align:center;margin-top:14px">
+      Full refund if host cancels. 48hr cancellation policy.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: SUCCESS                             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-success">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <h2 class="success-title">You're in! 🎉</h2>
+    <p class="success-sub">Your spot is confirmed. We'll send a reminder 24 hours before. See you there!</p>
+    <div class="event-ticket" id="success-ticket">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--forest)">Booking Confirmation</div>
+      <div class="ticket-row"><span>Event</span><span id="suc-name">Morning Trail Hike</span></div>
+      <div class="ticket-row"><span>Date</span><span id="suc-date">Sat May 24</span></div>
+      <div class="ticket-row"><span>Time</span><span id="suc-time">8:00 AM</span></div>
+      <div class="ticket-row"><span>Location</span><span id="suc-loc">Waterloo Park Trail</span></div>
+      <div class="ticket-row"><span>Host</span><span id="suc-host">Maria G.</span></div>
+      <div class="ticket-row"><span>Amount paid</span><span id="suc-amount">$8.80</span></div>
+      <div class="ticket-row"><span>Booking ref</span><span id="suc-ref">#GHR-0001</span></div>
+    </div>
+    <button class="btn-full" onclick="navTo('bookings');showScreen('app')">View my bookings</button>
+    <button class="btn-full" style="background:transparent;color:var(--forest);border:1.5px solid rgba(45,80,22,0.25);margin-top:10px" onclick="navTo('home');showScreen('app')">Back to home</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCREEN: SETUP GUIDE                         -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-guide">
+  <div class="guide-nav">
+    <button class="guide-back" onclick="showScreen('landing')">
+      <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Back
+    </button>
+    <div class="guide-title">Launch Guide · $0 Budget</div>
+  </div>
+  <div class="guide-content">
+    <div class="guide-intro">
+      <h2>Build & launch Gather for free</h2>
+      <p>Every tool you need has a free tier. Here's the complete stack — from domain to payments — without spending a dollar until you're making money.</p>
+    </div>
+
+    <div class="guide-phase" id="gp1">
+      <div class="guide-phase-header" onclick="togglePhase('gp1')">
+        <div class="guide-phase-num">1</div>
+        <div class="guide-phase-title">Host the app for free</div>
+        <div class="guide-phase-badge badge-free">100% free</div>
+      </div>
+      <div class="guide-phase-body" id="gp1-body">
+        <ul class="guide-step-list">
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🌐</div>
+            <div class="guide-step-text">
+              <strong>GitHub Pages (static hosting)</strong>
+              <p>Push this HTML file to a GitHub repo. Enable Pages in Settings → Pages → Deploy from main branch. Your app is live at yourname.github.io/gather in 2 minutes.</p>
+              <a class="link" href="https://pages.github.com" target="_blank">→ pages.github.com</a>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">▲</div>
+            <div class="guide-step-text">
+              <strong>Vercel (best option — custom domain, HTTPS)</strong>
+              <p>Connect your GitHub repo to Vercel. Auto-deploys on every push. Free tier includes custom domain, SSL, analytics. Zero config needed.</p>
+              <a class="link" href="https://vercel.com" target="_blank">→ vercel.com</a>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🔥</div>
+            <div class="guide-step-text">
+              <strong>Netlify (alternative)</strong>
+              <p>Drag-and-drop your folder into Netlify's UI. Live in 30 seconds. Free SSL and CDN. 100GB bandwidth/month free.</p>
+              <a class="link" href="https://netlify.com" target="_blank">→ netlify.com</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="guide-phase" id="gp2">
+      <div class="guide-phase-header" onclick="togglePhase('gp2')">
+        <div class="guide-phase-num">2</div>
+        <div class="guide-phase-title">Backend & database (free)</div>
+        <div class="guide-phase-badge badge-free">100% free</div>
+      </div>
+      <div class="guide-phase-body" id="gp2-body">
+        <ul class="guide-step-list">
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🗄️</div>
+            <div class="guide-step-text">
+              <strong>Supabase (free tier — Postgres + Auth + Storage)</strong>
+              <p>Create a free project. Use Supabase Auth for login (email/password, phone OTP). Use Postgres tables for hangouts, users, bookings. Free tier: 500MB DB, 1GB storage, 50K monthly active users.</p>
+              <a class="link" href="https://supabase.com" target="_blank">→ supabase.com</a>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">⚡</div>
+            <div class="guide-step-text">
+              <strong>Firebase (alternative — Google)</strong>
+              <p>Firestore + Firebase Auth. Free Spark plan: 1GB storage, 50K reads/day, 20K writes/day. More than enough to validate your MVP.</p>
+              <a class="link" href="https://firebase.google.com" target="_blank">→ firebase.google.com</a>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🔑</div>
+            <div class="guide-step-text">
+              <strong>Phone verification — Twilio (free trial)</strong>
+              <p>Twilio gives $15 free trial credit for SMS OTP verification. That's ~100 verifications — enough to validate your first cohort. Then use Supabase's built-in phone auth (uses Twilio under the hood).</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="guide-phase" id="gp3">
+      <div class="guide-phase-header" onclick="togglePhase('gp3')">
+        <div class="guide-phase-num">3</div>
+        <div class="guide-phase-title">Payments with Stripe</div>
+        <div class="guide-phase-badge badge-easy">No monthly fee</div>
+      </div>
+      <div class="guide-phase-body" id="gp3-body">
+        <ul class="guide-step-list">
+          <li class="guide-step-item">
+            <div class="guide-step-icon">💳</div>
+            <div class="guide-step-text">
+              <strong>Stripe — zero monthly cost</strong>
+              <p>Create a free Stripe account at stripe.com. No setup fee. No monthly fee. You only pay when you process money: 2.9% + 30¢ per transaction in Canada/US.</p>
+              <a class="link" href="https://stripe.com" target="_blank">→ stripe.com</a>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🔑</div>
+            <div class="guide-step-text">
+              <strong>Get your Publishable Key</strong>
+              <p>Dashboard → Developers → API Keys → copy your pk_live_… key. Replace STRIPE_PK in this file's script tag. For testing use pk_test_… first.</p>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">⚙️</div>
+            <div class="guide-step-text">
+              <strong>Backend: Stripe Payment Intents via Supabase Edge Function</strong>
+              <p>Create a Supabase Edge Function (free) that accepts amount + customer info, creates a PaymentIntent, and returns the client_secret. Your frontend then confirms with card details. Never expose your secret key in frontend code.</p>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">💸</div>
+            <div class="guide-step-text">
+              <strong>Stripe Connect for host payouts (recommended)</strong>
+              <p>Use Stripe Connect to pay hosts directly. Hosts onboard their own bank account. You take a platform fee (10%) and Stripe transfers the rest. No float, no manual payouts.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="guide-phase" id="gp4">
+      <div class="guide-phase-header" onclick="togglePhase('gp4')">
+        <div class="guide-phase-num">4</div>
+        <div class="guide-phase-title">Email, notifications & maps</div>
+        <div class="guide-phase-badge badge-free">Free tiers</div>
+      </div>
+      <div class="guide-phase-body" id="gp4-body">
+        <ul class="guide-step-list">
+          <li class="guide-step-item">
+            <div class="guide-step-icon">📧</div>
+            <div class="guide-step-text">
+              <strong>Resend — transactional email (free)</strong>
+              <p>3,000 emails/month free. Send booking confirmations, 24hr reminders, host notifications. Simple REST API or SDK.</p>
+              <a class="link" href="https://resend.com" target="_blank">→ resend.com</a>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🗺️</div>
+            <div class="guide-step-text">
+              <strong>Google Maps Embed — free</strong>
+              <p>Static map embeds and the Maps Embed API are free with no billing required. Show venue location on detail pages. Only the Maps JavaScript API has a $200/month free credit (which covers ~40K map loads).</p>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">📱</div>
+            <div class="guide-step-text">
+              <strong>Push notifications — OneSignal (free)</strong>
+              <p>Free web push notifications up to unlimited subscribers. Send "Your hangout starts in 1 hour!" reminders. Zapier-free webhook integration with Supabase triggers.</p>
+              <a class="link" href="https://onesignal.com" target="_blank">→ onesignal.com</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="guide-phase" id="gp5">
+      <div class="guide-phase-header" onclick="togglePhase('gp5')">
+        <div class="guide-phase-num">5</div>
+        <div class="guide-phase-title">Get your first 200 users (no ad spend)</div>
+        <div class="guide-phase-badge badge-week">Week 1</div>
+      </div>
+      <div class="guide-phase-body" id="gp5-body">
+        <ul class="guide-step-list">
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🎯</div>
+            <div class="guide-step-text">
+              <strong>Pick one city, one niche</strong>
+              <p>Don't launch everywhere. Pick Waterloo + "board games" OR "hiking". Create 3 hangouts yourself manually. Be the first host.</p>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">👽</div>
+            <div class="guide-step-text">
+              <strong>Post in local Reddit subreddits</strong>
+              <p>r/waterloo, r/uwaterloo — share the hangouts as genuine community posts, not spam. "I built this thing because I moved here and couldn't make friends. Anyone want to try it?"</p>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">📢</div>
+            <div class="guide-step-text">
+              <strong>Facebook Groups</strong>
+              <p>Search "Waterloo friends", "KW newcomers", "Board games Kitchener". Post your events there. Local Facebook groups have much higher engagement than you'd expect.</p>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">🏫</div>
+            <div class="guide-step-text">
+              <strong>University & co-working notice boards</strong>
+              <p>UW and Laurier have physical + digital bulletin boards. Students are exactly your audience — post a QR code flyer. Cost: $0 at most libraries.</p>
+            </div>
+          </li>
+          <li class="guide-step-item">
+            <div class="guide-step-icon">📊</div>
+            <div class="guide-step-text">
+              <strong>Measure "second hangout rate"</strong>
+              <p>Track what % of attendees come to a second event. If that number is above 40%, you have product-market fit. Below 20%, change the format.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Cost table -->
+    <div class="guide-phase">
+      <div class="guide-phase-header">
+        <div class="guide-phase-num">💰</div>
+        <div class="guide-phase-title">Total monthly cost breakdown</div>
+        <div class="guide-phase-badge badge-free">$0/mo to start</div>
+      </div>
+      <div style="padding:0 20px 20px">
+        <table class="cost-table">
+          <thead>
+            <tr><th>Tool</th><th>What it does</th><th>Cost</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Vercel</td><td>Hosting + CDN + SSL</td><td class="cost-free">Free</td></tr>
+            <tr><td>Supabase</td><td>Database + Auth + API</td><td class="cost-free">Free</td></tr>
+            <tr><td>Stripe</td><td>Payments</td><td class="cost-free">2.9%+30¢ per txn only</td></tr>
+            <tr><td>Resend</td><td>Email (3K/mo)</td><td class="cost-free">Free</td></tr>
+            <tr><td>OneSignal</td><td>Push notifications</td><td class="cost-free">Free</td></tr>
+            <tr><td>Google Maps</td><td>Map embeds</td><td class="cost-free">Free</td></tr>
+            <tr><td>GitHub</td><td>Code + version control</td><td class="cost-free">Free</td></tr>
+            <tr><td>Custom domain</td><td>.com domain name</td><td style="color:var(--rust)">~$14/yr (optional)</td></tr>
+            <tr class="total-row"><td colspan="2"><strong>Monthly total</strong></td><td class="cost-free"><strong>$0</strong></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:var(--gray);margin-top:12px">You only pay Stripe's processing fee on transactions — which means you're profitable from your very first booking.</p>
+      </div>
+    </div>
+
+    <button class="btn-full" style="margin-top:8px;margin-bottom:40px" onclick="showScreen('landing')">← Back to app demo</button>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────
+const INTERESTS = ['🥾 Hiking','🎲 Board games','☕ Coffee','📚 Books','🍜 Food','🏃 Running','🎨 Art','🎵 Music','🧘 Yoga','🚴 Cycling','🎬 Film','🌱 Gardening'];
+const EMOJIS = ['🏃','🎲','☕','🌲','🍜','🎨','📚','🎵','🧘','🚴','🎬','🌱','🥾','⛺','🎭','🏊'];
+
+const HANGOUTS = [
+  { id:0, emoji:'🌲', name:'Morning Trail Hike at Waterloo Park', host:'Maria G.', hostInit:'M', date:'Sat May 24', time:'8:00 AM', duration:'2.5 hrs', location:'Waterloo Park Trail', address:'Waterloo Park, Waterloo, ON', category:'🌲 Outdoor', price:8, maxSpots:7, filled:3, recurring:'Weekly', desc:'A laid-back morning hike for adults who want fresh air and good conversation. We walk the main trail loop (~4km), grab coffee after at a nearby cafe. All paces welcome. Great way to start Saturday!', requirements:'Wear comfortable shoes. Bring water.', tags:['Outdoor','Recurring','Morning'] },
+  { id:1, emoji:'🎲', name:'Tuesday Board Game Night', host:'Priya S.', hostInit:'P', date:'Tue May 20', time:'7:00 PM', duration:'2 hrs', location:'Common Ground Coffee', address:'45 King St N, Waterloo, ON', category:'🎲 Games', price:5, maxSpots:6, filled:4, recurring:'Weekly', desc:'Weekly board game night at Common Ground. I bring Catan, Ticket to Ride, Codenames, and a few card games. Perfect for people who want to meet others in a low-pressure setting.', requirements:'None! Just show up and play.', tags:['Games','Indoor','Evening'] },
+  { id:2, emoji:'☕', name:'New-to-KW Coffee Meetup', host:'James T.', hostInit:'J', date:'Sun May 25', time:'10:30 AM', duration:'1.5 hrs', location:'Princess Café', address:'37 King St W, Kitchener, ON', category:'☕ Social', price:0, maxSpots:8, filled:2, recurring:'Bi-weekly', desc:'Just moved to Kitchener-Waterloo? This is for you. Come have coffee, meet people in the same situation, swap tips about the city. No agenda, just good conversation.', requirements:'Nothing — just be yourself!', tags:['Free','Social','Newcomers'] },
+  { id:3, emoji:'📚', name:'Non-fiction Book Club', host:'Elena R.', hostInit:'E', date:'Wed May 28', time:'6:30 PM', duration:'2 hrs', location:'Waterloo Public Library', address:'35 Albert St, Waterloo, ON', category:'📚 Books', price:0, maxSpots:8, filled:5, recurring:'Monthly', desc:'We read one non-fiction book per month and discuss it. Current read: "How to Know a Person" by David Brooks. Very chill — even if you only got halfway through, you're welcome.', requirements:'Try to read the book! But lurkers welcome.', tags:['Free','Books','Monthly'] },
+  { id:4, emoji:'🧘', name:'Morning Flow Yoga', host:'Sophie K.', hostInit:'S', date:'Thu May 22', time:'7:00 AM', duration:'1 hr', location:'Victoria Park Pavilion', address:'85 Weber St W, Kitchener, ON', category:'🧘 Fitness', price:12, maxSpots:8, filled:6, recurring:'Weekly', desc:'Outdoor yoga to start your Thursday right. Suitable for all levels — I walk through each pose and offer modifications. Bring a mat if you have one; I have extras.', requirements:'Bring a yoga mat if you have one. Dress in layers.', tags:['Fitness','Morning','Outdoor'] },
+  { id:5, emoji:'🎨', name:'Watercolour for Beginners', host:'Tom A.', hostInit:'T', date:'Fri May 23', time:'5:30 PM', duration:'2.5 hrs', location:'The Registry Theatre', address:'122 Frederick St, Kitchener, ON', category:'🎨 Arts', price:18, maxSpots:6, filled:1, recurring:'Bi-weekly', desc:'No experience needed. I supply all materials — paints, paper, brushes. We paint something simple together (this week: a local streetscape). Great for stress relief and meeting creative people.', requirements:'Materials provided. Wear something you don\'t mind getting paint on.', tags:['Arts','Creative','Beginner'] },
+];
+
+let currentUser = null;
+let currentDetailId = 0;
+let userBookings = [];
+let selectedInterests = new Set();
+let createStep = 1;
+let selectedEmoji = '🎲';
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderInterestChips('interests-grid', true);
+  renderHangoutList();
+  renderExploreFilters();
+  renderExploreList(null);
+  renderCreateProgress();
+  renderEmojiGrid();
+  updatePricePreview();
+  const today = new Date(); today.setDate(today.getDate() + 7);
+  document.getElementById('c-date').value = today.toISOString().split('T')[0];
+});
+
+// ─── SCREENS ─────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showGuide() { showScreen('guide'); }
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────
+function switchAuthTab(tab, btn) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('auth-signup').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('auth-login').style.display = tab === 'login' ? 'block' : 'none';
+}
+
+function renderInterestChips(containerId, selectable) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = INTERESTS.map(i => `<div class="interest-chip ${selectedInterests.has(i) ? 'selected':''}" onclick="${selectable ? `toggleInterest('${i}')` : ''}">${i}</div>`).join('');
+}
+
+function toggleInterest(i) {
+  if (selectedInterests.has(i)) selectedInterests.delete(i);
+  else selectedInterests.add(i);
+  renderInterestChips('interests-grid', true);
+  renderInterestChips('profile-interests', false);
+}
+
+function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  if (!name || !email) { showToast('Please fill in name and email'); return; }
+  showLoading();
+  setTimeout(() => {
+    currentUser = { name, email, init: name.charAt(0).toUpperCase() };
+    hideLoading();
+    loginSuccess();
+  }, 1200);
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { showToast('Please enter your email'); return; }
+  showLoading();
+  setTimeout(() => {
+    const name = email.split('@')[0];
+    const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+    currentUser = { name: capitalized, email, init: capitalized.charAt(0) };
+    hideLoading();
+    loginSuccess();
+  }, 1000);
+}
+
+function loginSuccess() {
+  document.getElementById('user-avatar').textContent = currentUser.init;
+  document.getElementById('detail-avatar').textContent = currentUser.init;
+  document.getElementById('home-greeting').textContent = currentUser.name + ' 👋';
+  document.getElementById('profile-name').textContent = currentUser.name;
+  document.getElementById('profile-avatar-big').textContent = currentUser.init;
+  document.getElementById('profile-name-input').value = currentUser.name;
+  renderInterestChips('profile-interests', false);
+  renderBookings();
+  showScreen('app');
+  showToast('Welcome to Gather! 🎉');
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────
+function navTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+  if (page === 'create') { createStep = 1; showCreateStep(1); }
+}
+
+// ─── HANGOUT LIST ────────────────────────────────────────────────────────
+function renderHangoutList() {
+  const el = document.getElementById('hangout-list');
+  el.innerHTML = HANGOUTS.slice(1, 5).map(h => hangoutCardHTML(h)).join('');
+}
+
+function hangoutCardHTML(h) {
+  const spotsLeft = h.maxSpots - h.filled;
+  return `<div class="hangout-card" onclick="openDetail(${h.id})">
+    <div class="hangout-emoji">${h.emoji}</div>
+    <div class="hangout-info">
+      <div class="hangout-name">${h.name}</div>
+      <div class="hangout-host">Hosted by ${h.host}</div>
+      <div class="hangout-chips">
+        <span class="chip green">${h.date}</span>
+        <span class="chip">${h.time}</span>
+        ${h.recurring !== 'One-time' ? `<span class="chip rust">${h.recurring}</span>` : ''}
+      </div>
+    </div>
+    <div class="hangout-right">
+      <div class="hangout-price">${h.price === 0 ? 'Free' : '$' + h.price}</div>
+      <div class="hangout-spots">${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left</div>
+    </div>
+  </div>`;
+}
+
+// ─── EXPLORE ────────────────────────────────────────────────────────────
+const categories = ['All', 'Outdoor', 'Games', 'Social', 'Books', 'Fitness', 'Arts'];
+function renderExploreFilters() {
+  const el = document.getElementById('explore-filters');
+  el.innerHTML = categories.map((c, i) =>
+    `<div class="interest-chip ${i === 0 ? 'selected' : ''}" onclick="filterExplore('${c}', this)">${c}</div>`
+  ).join('');
+}
+function filterExplore(cat, el) {
+  document.querySelectorAll('#explore-filters .interest-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  renderExploreList(cat === 'All' ? null : cat);
+}
+function renderExploreList(cat) {
+  const el = document.getElementById('explore-list');
+  const filtered = cat ? HANGOUTS.filter(h => h.tags.some(t => t.toLowerCase().includes(cat.toLowerCase())) || h.category.toLowerCase().includes(cat.toLowerCase())) : HANGOUTS;
+  el.innerHTML = filtered.length ? filtered.map(h => hangoutCardHTML(h)).join('') : '<p style="text-align:center;color:var(--gray);padding:32px">No hangouts in this category yet.</p>';
+}
+
+// ─── DETAIL ──────────────────────────────────────────────────────────────
+function openDetail(id) {
+  currentDetailId = id;
+  const h = HANGOUTS[id];
+  const spotsLeft = h.maxSpots - h.filled;
+  const alreadyBooked = userBookings.some(b => b.id === id);
+
+  const attendeeInitials = ['M','J','P','E','S','T','A','R'];
+  const attendeeHTML = Array.from({length: h.filled}, (_, i) =>
+    `<div class="attendee-item"><div class="attendee-avatar">${attendeeInitials[i] || '?'}</div><div class="attendee-name">${['Maria','James','Priya','Elena','Sophie','Tom','Alex','Raj'][i] || 'Guest'}</div></div>`
+  ).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div style="padding:20px 24px 120px">
+      <div class="detail-hero">
+        <div class="bg-glow"></div>
+        <div class="detail-hero-content">
+          <div class="detail-back" onclick="showScreen('app')">
+            <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Back
+          </div>
+          <div class="detail-emoji">${h.emoji}</div>
+          <div class="detail-title">${h.name}</div>
+          <div class="detail-meta-row">
+            <div class="detail-meta-item"><svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>${h.date} · ${h.time} · ${h.duration}</div>
+            <div class="detail-meta-item"><svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>${h.location}</div>
+            <div class="detail-meta-item"><svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>${h.recurring}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${h.tags.map(t => `<span style="background:rgba(245,240,232,0.15);color:rgba(245,240,232,0.8);font-size:12px;padding:4px 10px;border-radius:100px">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>About this hangout</h3>
+        <p>${h.desc}</p>
+        ${h.requirements ? `<p style="margin-top:10px"><strong>Requirements:</strong> ${h.requirements}</p>` : ''}
+      </div>
+
+      <div class="detail-section">
+        <h3>Hosted by</h3>
+        <div class="host-row">
+          <div class="host-avatar">${h.hostInit}</div>
+          <div class="host-info">
+            <h4>${h.host}</h4>
+            <p>Verified member · 12 hangouts hosted</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Who's coming (${h.filled}/${h.maxSpots})</h3>
+        <div class="attendees-row">${attendeeHTML}</div>
+        ${spotsLeft > 0 ? `<p style="font-size:13px;color:var(--forest);font-weight:500;margin-top:12px">${spotsLeft} spot${spotsLeft!==1?'s':''} remaining</p>` : '<p style="font-size:13px;color:var(--rust);font-weight:500;margin-top:12px">Sold out — join waitlist</p>'}
+      </div>
+
+      <div class="detail-section">
+        <div class="spot-item"><span>Ticket</span><span class="spot-open">${h.price === 0 ? 'Free' : '$' + h.price + ' CAD'}</span></div>
+        <div class="spot-item"><span>Platform fee</span><span>${h.price === 0 ? '$0' : '$' + (h.price * 0.1).toFixed(2)}</span></div>
+        <div class="spot-item"><span style="font-weight:600">Total</span><span style="font-weight:700">${h.price === 0 ? 'Free' : '$' + (h.price * 1.1).toFixed(2)}</span></div>
+      </div>
+    </div>`;
+
+  document.getElementById('detail-footer').innerHTML = `
+    <div>
+      <div class="price-big">${h.price === 0 ? 'Free' : '$' + (h.price * 1.1).toFixed(2)}</div>
+      <div class="price-per">${h.price === 0 ? 'No charge' : 'inc. platform fee'}</div>
+    </div>
+    ${alreadyBooked
+      ? `<button class="btn-full" disabled style="flex:1;opacity:0.6;cursor:default">✓ Already booked</button>`
+      : spotsLeft > 0
+        ? `<button class="btn-full" style="flex:1" onclick="goToPayment(${h.id})">Reserve my spot</button>`
+        : `<button class="btn-full" style="flex:1;background:var(--gray)" onclick="showToast('Added to waitlist!')">Join waitlist</button>`
+    }`;
+
+  showScreen('detail');
+}
+
+// ─── PAYMENT ────────────────────────────────────────────────────────────
+function goToPayment(id) {
+  const h = HANGOUTS[id];
+  currentDetailId = id;
+  const fee = h.price * 0.1;
+  const total = h.price + fee;
+
+  document.getElementById('pay-event-name').textContent = h.name;
+  document.getElementById('pay-date').textContent = h.date + ' · ' + h.time;
+  document.getElementById('pay-subtotal').textContent = h.price === 0 ? 'Free' : '$' + h.price.toFixed(2);
+  document.getElementById('pay-fee').textContent = '$' + fee.toFixed(2);
+  document.getElementById('pay-total').textContent = h.price === 0 ? 'Free' : '$' + total.toFixed(2);
+  document.getElementById('pay-btn-amount').textContent = h.price === 0 ? 'nothing' : '$' + total.toFixed(2);
+
+  if (h.price === 0) {
+    document.getElementById('pay-btn').textContent = 'Confirm free spot →';
+    document.getElementById('pay-btn').onclick = () => confirmBooking(id);
+  }
+
+  showScreen('payment');
+
+  // Initialize Stripe (replace with your real publishable key)
+  // const stripe = Stripe('pk_test_YOUR_PUBLISHABLE_KEY');
+  // const elements = stripe.elements();
+  // const card = elements.create('card', { style: { base: { fontFamily: 'DM Sans, sans-serif', fontSize: '15px' } } });
+  // card.mount('#card-element');
+  // card.on('change', e => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; });
+  // window._stripe = stripe; window._card = card;
+}
+
+function processPayment() {
+  const h = HANGOUTS[currentDetailId];
+  if (h.price === 0) { confirmBooking(currentDetailId); return; }
+  showLoading();
+
+  // Real Stripe flow (uncomment when you have your keys):
+  // window._stripe.createPaymentMethod({ type: 'card', card: window._card }).then(result => {
+  //   if (result.error) { hideLoading(); document.getElementById('card-errors').textContent = result.error.message; return; }
+  //   // Call your backend to create PaymentIntent, then confirmCardPayment
+  //   confirmBooking(currentDetailId);
+  // });
+
+  // Simulated flow for demo:
+  setTimeout(() => { hideLoading(); confirmBooking(currentDetailId); }, 1500);
+}
+
+function confirmBooking(id) {
+  const h = HANGOUTS[id];
+  h.filled = Math.min(h.filled + 1, h.maxSpots);
+
+  userBookings.push({ ...h, bookedAt: new Date() });
+  renderBookings();
+
+  const total = (h.price * 1.1).toFixed(2);
+  document.getElementById('suc-name').textContent = h.name;
+  document.getElementById('suc-date').textContent = h.date;
+  document.getElementById('suc-time').textContent = h.time;
+  document.getElementById('suc-loc').textContent = h.location;
+  document.getElementById('suc-host').textContent = h.host;
+  document.getElementById('suc-amount').textContent = h.price === 0 ? 'Free' : '$' + total;
+  document.getElementById('suc-ref').textContent = '#GHR-' + String(Math.floor(Math.random() * 9000) + 1000);
+  showScreen('success');
+}
+
+// ─── BOOKINGS ────────────────────────────────────────────────────────────
+function renderBookings() {
+  const upcoming = userBookings.filter(b => true); // all are upcoming in demo
+  const past = HANGOUTS.slice(0, 2).map(h => ({ ...h, past: true }));
+
+  document.getElementById('upcoming-bookings').innerHTML = upcoming.length
+    ? upcoming.map(h => bookingCardHTML(h, false)).join('')
+    : '<p style="font-size:14px;color:var(--gray);padding:8px 0">No upcoming hangouts. Find one to join!</p>';
+
+  document.getElementById('past-bookings').innerHTML = past.map(h => bookingCardHTML(h, true)).join('');
+}
+
+function bookingCardHTML(h, isPast) {
+  return `<div class="booking-card">
+    <div class="booking-emoji">${h.emoji}</div>
+    <div class="booking-info">
+      <div class="booking-name">${h.name}</div>
+      <div class="booking-date">${h.date} · ${h.time}</div>
+    </div>
+    <div class="booking-status ${isPast ? 'status-past' : 'status-confirmed'}">${isPast ? 'Attended' : 'Confirmed'}</div>
+  </div>`;
+}
+
+// ─── CREATE ──────────────────────────────────────────────────────────────
+function renderCreateProgress() {
+  const el = document.getElementById('create-progress');
+  el.innerHTML = [1,2,3].map(n => `<div class="create-step ${n < createStep ? 'done' : n === createStep ? 'done' : ''}"></div>`).join('');
+}
+
+function showCreateStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('create-step-' + i);
+    if (el) el.style.display = i === n ? 'block' : 'none';
+  });
+  createStep = n;
+  renderCreateProgress();
+}
+
+function createNext(n) {
+  if (n === 2) {
+    const name = document.getElementById('c-name').value.trim();
+    const cat = document.getElementById('c-cat').value;
+    if (!name || !cat) { showToast('Please fill in name and category'); return; }
+  }
+  if (n === 3) {
+    const loc = document.getElementById('c-loc').value.trim();
+    if (!loc) { showToast('Please enter a location'); return; }
+  }
+  showCreateStep(n);
+}
+
+function renderEmojiGrid() {
+  const el = document.getElementById('emoji-grid');
+  if (!el) return;
+  el.innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-opt ${e === selectedEmoji ? 'selected' : ''}" onclick="selectEmoji('${e}')">${e}</div>`
+  ).join('');
+}
+
+function selectEmoji(e) {
+  selectedEmoji = e;
+  renderEmojiGrid();
+}
+
+function updatePricePreview() {
+  const price = parseFloat(document.getElementById('c-price')?.value) || 0;
+  const fee = price * 0.1;
+  const stripe = price * 0.029 + 0.30;
+  const you = price - fee - stripe;
+  document.getElementById('pp-price').textContent = '$' + price.toFixed(2);
+  document.getElementById('pp-fee').textContent = '-$' + fee.toFixed(2);
+  document.getElementById('pp-stripe').textContent = '-$' + stripe.toFixed(2);
+  document.getElementById('pp-you').textContent = price > 0 ? '$' + Math.max(you, 0).toFixed(2) : '$0.00';
+}
+
+function publishHangout() {
+  const name = document.getElementById('c-name').value.trim();
+  const price = parseFloat(document.getElementById('c-price').value) || 0;
+  const loc = document.getElementById('c-loc').value.trim();
+  showLoading();
+  setTimeout(() => {
+    const newH = {
+      id: HANGOUTS.length, emoji: selectedEmoji,
+      name, host: currentUser?.name || 'You', hostInit: currentUser?.init || 'Y',
+      date: 'Upcoming', time: document.getElementById('c-time').value,
+      duration: document.getElementById('c-duration').value,
+      location: loc, address: document.getElementById('c-addr').value,
+      category: document.getElementById('c-cat').value,
+      price, maxSpots: parseInt(document.getElementById('c-spots').value),
+      filled: 1, recurring: document.getElementById('c-recurring').value,
+      desc: document.getElementById('c-desc').value || 'Come join us!',
+      requirements: document.getElementById('c-reqs').value,
+      tags: ['New']
+    };
+    HANGOUTS.push(newH);
+    renderHangoutList();
+    hideLoading();
+    showToast('Hangout published! 🎉');
+    navTo('home');
+  }, 1500);
+}
+
+// ─── GUIDE ───────────────────────────────────────────────────────────────
+function togglePhase(id) {
+  const body = document.getElementById(id + '-body');
+  if (!body) return;
+  body.classList.toggle('open');
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function showLoading() { document.getElementById('loadingOverlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+</script>
+</body>
+</html>
