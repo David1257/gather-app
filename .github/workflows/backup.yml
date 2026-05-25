@@ -1,0 +1,25 @@
+name: Daily Supabase Backup
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Export profiles table
+        run: |
+          curl -s 'https://zzjxqlynmdzkrtmrvpjr.supabase.co/rest/v1/profiles?select=*' \
+          -H 'apikey: sb_publishable_OZxv5QucLWZTQsmSju2rcA_E3AObPLQ' \
+          -o profiles-backup.json
+          curl -s 'https://zzjxqlynmdzkrtmrvpjr.supabase.co/rest/v1/friendships?select=*' \
+          -H 'apikey: sb_publishable_OZxv5QucLWZTQsmSju2rcA_E3AObPLQ' \
+          -o friendships-backup.json
+      - name: Save backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_number }}
+          path: |
+            profiles-backup.json
+            friendships-backup.json
+          retention-days: 30
